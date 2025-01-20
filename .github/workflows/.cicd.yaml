@@ -13,11 +13,11 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     
-    # Add your existing build and test steps here
-    - name: Build and test
+    # This step will always fail
+    - name: Intentionally fail
       run: |
-        # Your build commands here
-        echo "Running build and tests..."
+        echo "This step will fail..."
+        exit 1
         
     - name: Create Issue on Failure
       if: failure()
