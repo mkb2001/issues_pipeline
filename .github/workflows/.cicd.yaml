@@ -1,0 +1,50 @@
+name: CI with Automated Issue Creation
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    # Add your existing build and test steps here
+    - name: Build and test
+      run: |
+        # Your build commands here
+        echo "Running build and tests..."
+        
+    - name: Create Issue on Failure
+      if: failure()
+      uses: actions/github-script@v6
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          const creator = process.env.GITHUB_ACTOR;
+          const sha = context.sha.substring(0, 7);
+          
+          await github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: `🚨 Pipeline Failure in commit ${sha}`,
+            body: `
+            ## Pipeline Failure Details
+            
+            * **Commit**: ${sha}
+            * **Branch**: ${process.env.GITHUB_REF}
+            * **Triggered by**: @${creator}
+            
+            ### Workflow Run
+            * **Run ID**: ${context.runId}
+            * **URL**: ${process.env.GITHUB_SERVER_URL}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}
+            
+            Please investigate the pipeline failure and fix the issues.
+            `,
+            assignees: [creator],
+            labels: ['pipeline-failure', 'bug']
+          });
